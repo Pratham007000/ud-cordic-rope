@@ -61,10 +61,10 @@ datapath. We show the CORDIC scale factor is absorbed by attention at zero
 cost, because queries and keys share the rotator and $K^2$ folds into the
 existing $1/\sqrt{d_h}$ scale, but only where the gain is angle-independent,
 which excludes radix-4 stage merging, and we measure that recovering the
-property costs more than merging saves. We show the angle encoder the
-uniform-angle formulation leaves unspecified is necessary, since the implied
-construction mis-encodes the leading micro-rotations with an error independent
-of pipeline depth, and nearly free, since the angle never depends on the data.
+property costs more than merging saves. We show that reading micro-rotation
+directions straight from the binary angle, as the uniform-angle formulation
+prescribes, mis-encodes the leading stages with an error independent of
+pipeline depth, and that correcting it is necessary and nearly free.
 And we show the required precision is set by the model's frequency schedule
 rather than its size, spanning two bits across five production LLMs.
 Synthesised in 45\,nm, the resulting rotator is $19.2\%$ smaller and $42.7\%$
@@ -272,9 +272,9 @@ Fig.~\ref{fig:arch} shows the complete datapath. A UD stage rotates by
 $a_i = \arctan(2^{-(i+1)})$, not by $2^{-(i+1)}$, so encoding a target angle is
 a subset-sum over $\{a_i\}$ whose weights are only approximately geometric:
 $a_i/2^{-(i+1)} = 0.927, 0.980, 0.995, 0.999,\ldots$ Reading digits straight
-off the binary representation of $\theta$ (the construction the UD
-formulation implies) therefore mis-encodes the leading stages, with an error
-independent of pipeline depth. This is the defect, not the datapath: deepening
+off the binary representation of $\theta$, as UD CORDIC prescribes since
+consecutive angles differ by close to two, therefore mis-encodes the leading
+stages, with an error independent of pipeline depth. This is the defect, not the datapath: deepening
 the pipeline does not fix it.
 
 The tail is geometric to better than $0.13\%$, so it can be read from the
@@ -575,8 +575,8 @@ and contribute no multipliers at all.
 \section{Conclusion}
 
 We presented a multiplier-free, memory-free RoPE datapath on uniformly
-distributed CORDIC, with three results specific to RoPE. The angle encoder the
-UD formulation leaves unspecified is necessary and nearly free
+distributed CORDIC, with three results specific to RoPE. Correcting the angle encoding UD
+CORDIC prescribes is necessary and nearly free
 ($136$\,$\mu$m$^2$, $0.094^{\circ}$ RMS against $2.20^{\circ}$). The scale
 factor is absorbed by attention at zero cost, but constant gain and radix-4
 merging are mutually exclusive, and compensation costs more than merging
