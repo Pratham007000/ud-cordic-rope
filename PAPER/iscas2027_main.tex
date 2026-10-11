@@ -289,7 +289,7 @@ reduced modulo $2\pi$ by truncation, which is exact and costs no adder, and the
 quadrant is restored after the rotator by swaps and sign flips. The front-end
 depends on $(m,i)$ but never on the data, so a digit string is computed once
 and broadcast to every head, layer and batch element: $1024$ uses for a
-LLaMA-2-7B-class model. It is \emph{not} shared across the $d_h/2$ lanes of a
+LLaMA-2-7B-class model. It is \emph{not} shared across the $d_h/2$ pairs of a
 head, since $\theta_i = m\Theta_i$ depends on $i$. This amortisation is what
 makes a dedicated encoder affordable, and it is also why a bare multiplier
 rotator is not a complete design: it consumes $\sin$ and $\cos$ that something
@@ -309,7 +309,7 @@ covering one head's $64$ pairs costs $23877$\,$\mu$m$^2$ with a single shared
 exponent against $22112$\,$\mu$m$^2$ as eight blocks of eight, which is also
 $1.7\times$ more accurate and holds $293$\,ps of slack against $4$\,ps. We use
 $D=8$; \S\ref{sec:precision} was measured at $D=64$ and is conservative for it.
-Normalisation costs $824$\,$\mu$m$^2$ per lane at $W=14$, or $19\%$ of a
+Normalisation costs $345$\,$\mu$m$^2$ per pair at $W=14$, or $8\%$ of a
 rotator, and applies equally to the multiplier and LUT baselines, so it does
 not bias \S\ref{sec:hw}.
 
@@ -454,10 +454,13 @@ adequate for one model is unusable for the other on identical hardware.
 The cause is the frequency schedule, not model scale: both are 7B models with
 the same head dimension. Qwen2 uses a RoPE base of $10^{6}$ against LLaMA-2's
 $10^{4}$, so $\Theta_i = b^{-2i/d}$ spans a far wider dynamic range and the
-low-frequency dimension pairs receive angles too small to resolve at coarse
-width. Once an angle falls below the datapath LSB, that pair stops rotating and
-its positional signal is discarded rather than degraded: a cliff rather than
-a slope. Three further models at base $10^{4}$ track the LLaMA-2-7B column
+low-frequency dimension pairs receive angles so small that the displacement
+they produce falls below the datapath LSB. The limit is the data width, not
+angular resolution: the angle datapath is held at $12$ fractional bits across
+the whole sweep, and as $F$ falls the late rotator stages shift their operand
+entirely below the LSB and cease to contribute. That pair then stops rotating
+and its positional signal is discarded rather than degraded: a cliff rather
+than a slope. Three further models at base $10^{4}$ track the LLaMA-2-7B column
 within $0.05\%$ at every $F \ge 9$: the base, not the parameter count, is the
 discriminator.
 
@@ -530,7 +533,8 @@ Against it the two are comparable in area at $W=12$ ($3961$ against
 $4047$\,$\mu$m$^2$, which we do not read as significant), but Binary UD
 already uses $18\%$ less energy and holds $1499$\,ps of slack against
 $201$\,ps. By $W=14$ the gaps open to $19.1\%$ in area and $38\%$ in energy,
-the LUT having $26$\,ps of margin and failing outright at $W=16$: a shift-add
+the LUT holding $26$\,ps of margin against Binary UD's $1342$\,ps, and only
+$30$\,ps at $W=16$: a shift-add
 pipeline grows as $\mathcal{O}(WN)$ while table storage grows with both width
 and angular resolution, so the advantage is in energy and timing at narrow
 datapaths and becomes an area advantage only once the table does.
@@ -565,7 +569,7 @@ UD as primary and merged UD as the variant for energy-dominated budgets.
 Binary UD closes at $1.52$\,GHz at $W=14$; its $6.58$\,ns traversal is
 immaterial because RoPE performs $128$ rotations per head, layer and token
 against attention's $2N_{\text{ctx}}d_h$ multiply--accumulates, leaving one
-lane four times over-provisioned behind even a $512$-MAC datapath. The
+rotator four times over-provisioned behind even a $512$-MAC datapath. The
 rotations are $0.098\%$ of the attention arithmetic at $N_{\text{ctx}}=2048$,
 and contribute no multipliers at all.
 

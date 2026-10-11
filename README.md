@@ -12,7 +12,7 @@ evaluation, and the raw synthesis reports that every number in the paper is read
 | Constant gain and radix-4 stage merging are mutually exclusive | §II-B | `VERIFY/csd_verdict.py`, `VERIFY/table1_regen.py` |
 | Fixed-point RoPE saturates on real activations; block floating point is a functional requirement | §III-B, §IV-A | `KAGGLE/rope_hw.py`, `RTL/rope_bfp_norm.v`, `VERIFY/block_granularity.py` |
 | The precision requirement is set by the RoPE base, not model size (`F=11` for Qwen2, `F=8` suffices for LLaMA-2) | §IV-A, `tab:fsweep` | `KAGGLE/eval_perplexity.py`, `KAGGLE/validate_hw.py` |
-| Area, power and energy against standard CORDIC, a sin/cos LUT and a multiplier at `W=12` and `W=14` | §IV-B, `tab:perf` | `RUN/*/`, `SCRIPTS/collect_results.py` |
+| Area, power and energy against standard CORDIC, a sin/cos LUT and a multiplier at `W=12` and `W=14` | §IV-B, `tab:perf` | `SCRIPTS/collect_results.py`; reports pending, see below |
 
 ## Layout
 
@@ -24,6 +24,7 @@ CONSTRAINTS/  SDC: 2.0 ns (500 MHz), input/output delays, load
 SCRIPTS/      Genus TCL, one per design, plus run_all_synth.sh and the
               report collector that produces the CSV behind tab:perf
 RUN/          synthesis reports as produced by Genus, per design and per width
+              (see "Coverage of RUN/" below -- this is the earlier campaign)
 VERIFY/       Python models and Verilog testbenches; golden vectors;
               table1_regen.py regenerates the angle-error table
 KAGGLE/       perplexity evaluation on WikiText-2 against a bit-accurate
@@ -62,6 +63,20 @@ python3 VERIFY/table1_regen.py
 - Corner `fast_vdd1v2` at PVT_1P32V_0C (1.32 V, 0 °C), which is optimistic relative
   to nominal; every design in the comparison is synthesised at the same corner
 - 2.0 ns clock period (500 MHz)
+
+## Coverage of `RUN/`
+
+`RUN/` holds the **earlier synthesis campaign**: the merged UD datapath swept over
+`W=6..14`, and the multiplier, sin/cos LUT and standard CORDIC baselines at a
+subset of widths. Where it overlaps the paper it agrees exactly, for instance
+`mult_rope/W=14` at 4184.712 um^2 against the 4185 reported, `sin_cos_rope/W=14` at
+5375.214 against 5375, and `csd_ud/14` at 3466.512 against the 3467 uncompensated
+row of `tab:gaincomp`.
+
+It does **not** yet contain the later campaign of 17 runs: the Binary UD rotator at
+`W=12` and `W=14`, the H1/H2 gain-compensation runs, and the BFP block-granularity
+sweep. Those reports are being added; until then the parts of `tab:perf` that rest
+on them are not reproducible from this repository alone.
 
 ## A note on what is not here
 
