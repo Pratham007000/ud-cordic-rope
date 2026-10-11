@@ -36,17 +36,17 @@
 
 %% ISCAS 2027 is NOT double-blind -- author information is required.
 \author{\IEEEauthorblockN{Siddhant Deore}
-\IEEEauthorblockA{\textit{International Institute of Information Technology Bangalore}\\
+\IEEEauthorblockA{\textit{IIIT Bangalore}\\
 Bangalore, India \\
 Siddhant.Deore@iiitb.ac.in}
 \and
 \IEEEauthorblockN{Pratham Shetty}
-\IEEEauthorblockA{\textit{International Institute of Information Technology Bangalore}\\
+\IEEEauthorblockA{\textit{IIIT Bangalore}\\
 Bangalore, India \\
 Pratham.Shetty@iiitb.ac.in}
 \and
 \IEEEauthorblockN{Madhav Rao}
-\IEEEauthorblockA{\textit{International Institute of Information Technology Bangalore}\\
+\IEEEauthorblockA{\textit{IIIT Bangalore}\\
 Bangalore, India \\
 mr@iiitb.ac.in}
 }
@@ -254,7 +254,7 @@ merged-UD areas of \S\ref{sec:hw}.
 \node[free] (gain) at (4.15,-4.70) {attention scale\\[-2pt]\tiny$K^{2}/\sqrt{d_h}$ (no hardware)};
 \draw[ar,densely dashed] (den) -- (gain);
 \end{tikzpicture}
-\vspace{-2mm}
+\vspace{-4mm}
 \caption{RoPE datapath. The angle front-end (dotted) depends on $(m,i)$ but
 never on the data, so each digit string is reused across every head, layer and
 batch element ($32\times32$ for a LLaMA-2-7B-class model). Digits are produced
@@ -579,12 +579,11 @@ distributed CORDIC, with three results specific to RoPE. The angle encoder the
 UD formulation leaves unspecified is necessary and nearly free
 ($136$\,$\mu$m$^2$, $0.094^{\circ}$ RMS against $2.20^{\circ}$). The scale
 factor is absorbed by attention at zero cost, but constant gain and radix-4
-merging are mutually exclusive, and compensating a merged datapath costs more
-than merging saves. The required precision is set by the model's frequency
-schedule rather than its size. The resulting rotator is $19.2\%$ smaller and
-$42.7\%$ lower in power than standard CORDIC, and $19.1\%$ smaller with $38\%$
-less energy than a $\sin/\cos$ LUT. All RTL and scripts are
-released at~\cite{github}.
+merging are mutually exclusive, and compensation costs more than merging
+saves. Required precision follows the model's frequency schedule, not its
+size. The rotator is $19.2\%$ smaller and $42.7\%$ lower in power than
+standard CORDIC, and $19.1\%$ smaller with $38\%$ less energy than a
+$\sin/\cos$ LUT. All RTL and scripts are released at~\cite{github}.
 
 \balance
 \bibliographystyle{IEEEtran}
