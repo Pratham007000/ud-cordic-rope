@@ -65,8 +65,9 @@ property costs more than merging saves. We show that reading micro-rotation
 directions straight from the binary angle, as the uniform-angle formulation
 prescribes, mis-encodes the leading stages with an error independent of
 pipeline depth, and that correcting it is necessary and nearly free.
-And we show the required precision is set by the model's frequency schedule
-rather than its size, spanning two bits across five production LLMs.
+And we show the required precision varies by two bits across five
+production LLMs of the same size and head dimension, and is not predicted by
+the rotary base alone.
 Synthesised in 45\,nm, the resulting rotator is $19.2\%$ smaller and $42.7\%$
 lower in power than standard CORDIC, and $19.1\%$ smaller with $38\%$ less
 energy than a $\sin/\cos$ LUT, the only self-contained baseline. All RTL and
@@ -101,10 +102,10 @@ construction the uniform-angle formulation implies mis-encodes the leading
 micro-rotations with an error independent of pipeline depth, yet the angle
 depends only on position and dimension index, never on the data, so a correct
 encoder is computed once and reused across every head, layer and batch element.
-And the precision RoPE requires is set by the model's frequency schedule rather
-than its size: two 7B models with the same head dimension differ by two bits,
-because a large rotary base leaves low-frequency dimension pairs with angles
-below the datapath LSB, at which point they stop rotating entirely.
+And the precision RoPE requires is a property of the individual model, not of
+its size: two 7B models with the same head dimension differ by two bits, a gap
+that survives a controlled sweep of the rotary base and so cannot be read off
+the configuration.
 
 The vehicle is uniformly distributed (UD) CORDIC~\cite{ud}, which replaces the
 arc-tangent angle set with a uniform one so micro-rotation directions are read
@@ -358,7 +359,7 @@ network of three or four adders rather than a multiplier.
 
 \begin{table}[t]
 \caption{Gain compensation depth versus residual error and measured cost at
-$W=14$. Perplexity is WikiText-2, full test split, $\mathrm{ctx}=2048$.}
+$W=14$. Perplexity is WikiText-2, $\mathrm{ctx}=2048$.}
 \label{tab:gaincomp}
 \centering
 \begin{tabular}{lccccr}
@@ -414,9 +415,10 @@ bit-accurate model of the synthesised datapath (the same encoder, range
 reduction, block normalisation and pipeline), verified against RTL to
 $0.002^{\circ}$. Only the \emph{rotation} is approximated; weights, activations
 and the queries and keys stay in \texttt{float16}, so the numbers isolate the
-rotation hardware rather than quantisation in general. Evaluation is the full
-WikiText-2 raw test split, stride equal to context so each token is scored
-once, KV cache disabled, batch 1, transformers 5.17.0 / torch 2.10.0.
+rotation hardware rather than quantisation in general. Evaluation is the first
+$150$k tokens of the WikiText-2 raw test split, stride equal to context so each
+token is scored once, KV cache disabled, batch 1, transformers 5.19.0 / torch
+2.10.0.
 Perplexity uses an explicit shift rather than passing \texttt{labels}, because
 the framework applies its own and the two compose silently into an off-by-one
 evaluation; absolute baselines should be read against the floating-point row of
@@ -424,7 +426,7 @@ the same table.
 
 \begin{table}[t]
 \caption{Perplexity versus fractional width $F$, Binary UD ($N=10$),
-WikiText-2, $\mathrm{ctx}=2048$. $\Delta$ is relative to the
+WikiText-2, first $150$k tokens, $\mathrm{ctx}=2048$. $\Delta$ is relative to the
 \texttt{float16} baseline of the same model.}
 \label{tab:fsweep}
 \centering
@@ -434,40 +436,41 @@ WikiText-2, $\mathrm{ctx}=2048$. $\Delta$ is relative to the
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
 $F$ & PPL & $\Delta$ & PPL & $\Delta$ \\
 \midrule
-baseline & 5.4680 & ---        & 7.1405 & --- \\
-11       & 5.4683 & $+0.005\%$ & 7.1417 & $+0.018\%$ \\
-10       & 5.4691 & $+0.020\%$ & 7.1478 & $+0.103\%$ \\
-9        & 5.4723 & $+0.078\%$ & 7.5943 & $+6.36\%$ \\
-8        & 5.4854 & $+0.318\%$ & 16.527 & $+131\%$ \\
+baseline & 5.5314 & ---        & 6.8870 & --- \\
+11       & 5.5314 & $+0.001\%$ & 6.8877 & $+0.011\%$ \\
+10       & 5.5322 & $+0.015\%$ & 6.8933 & $+0.091\%$ \\
+9        & 5.5355 & $+0.075\%$ & 7.3191 & $+6.27\%$ \\
+8        & 5.5481 & $+0.303\%$ & 16.115 & $+134\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The two models disagree, and the disagreement is the result.
-Table~\ref{tab:fsweep} shows LLaMA-2-7B within $0.32\%$ of baseline at $F=8$,
-degrading gracefully below. Qwen2-7B has already lost $6.4\%$ at $F=9$ and
+Table~\ref{tab:fsweep} shows LLaMA-2-7B within $0.30\%$ of baseline at $F=8$,
+degrading gracefully below. Qwen2-7B has already lost $6.3\%$ at $F=9$ and
 collapses at $F=8$: two orders of magnitude across a single bit. A precision
 adequate for one model is unusable for the other on identical hardware.
 
-The cause is the frequency schedule, not model scale: both are 7B models with
-the same head dimension. Qwen2 uses a RoPE base of $10^{6}$ against LLaMA-2's
-$10^{4}$, so $\Theta_i = b^{-2i/d}$ spans a far wider dynamic range and the
-low-frequency dimension pairs receive angles so small that the displacement
-they produce falls below the datapath LSB. The limit is the data width, not
-angular resolution: the angle datapath is held at $12$ fractional bits across
-the whole sweep, and as $F$ falls the late rotator stages shift their operand
-entirely below the LSB and cease to contribute. That pair then stops rotating
-and its positional signal is discarded rather than degraded: a cliff rather
-than a slope. Three further models at base $10^{4}$ track the LLaMA-2-7B column
-within $0.05\%$ at every $F \ge 9$: the base, not the parameter count, is the
-discriminator.
+The frequency schedule is implicated, but it is not by itself the cause. Both
+are 7B models with the same head dimension, and Qwen2 uses a RoPE base of
+$10^{6}$ against LLaMA-2's $10^{4}$, so $\Theta_i = b^{-2i/d}$ spans a far wider
+range and its low-frequency pairs receive the smallest angles. Overriding
+LLaMA-2's base to $10^{6}$ at inference, however, does not reproduce the cliff:
+on identical weights the change at $F=9$ moves from $+0.08\%$ to $-0.32\%$, and
+the collapse stays at $F=5$ for bases $10^{4}$, $10^{5}$ and $10^{6}$ alike.
+What distinguishes Qwen2 is therefore not the schedule it is run with but the
+schedule it was trained with, which decides whether its representations depend
+on resolving those angles at all. We report the dependence and do not claim to
+have isolated its cause. For a datapath the operative fact is the same either
+way: the requirement cannot be read off the configuration and must be
+measured.
 
 We therefore report no single optimum. \textbf{$F=11$ ($W=13$) is the
-defensible recommendation for a general-purpose unit}, at $+0.005\%$ and
-$+0.018\%$ on the two models, one bit above the point at which Qwen2 begins to
-move; $F=10$ is the aggressive choice at $0.11\%$. A general-purpose
-accelerator should provision for the wider base, since recent models trend
-towards larger ones.
+defensible recommendation for a general-purpose unit}, at $+0.001\%$ and
+$+0.011\%$ on the two models, one bit above the point at which Qwen2 begins to
+move; $F=10$ is the aggressive choice at $0.09\%$. A general-purpose
+accelerator should provision for the widest requirement it may meet, since it
+cannot infer one from the model.
 
 Rotation error does not accumulate with sequence length despite $\theta$
 growing without bound: at $F=10$, degradation over contexts of $1024$, $2048$
@@ -580,8 +583,8 @@ CORDIC prescribes is necessary and nearly free
 ($136$\,$\mu$m$^2$, $0.094^{\circ}$ RMS against $2.20^{\circ}$). The scale
 factor is absorbed by attention at zero cost, but constant gain and radix-4
 merging are mutually exclusive, and compensation costs more than merging
-saves. Required precision follows the model's frequency schedule, not its
-size. The rotator is $19.2\%$ smaller and $42.7\%$ lower in power than
+saves. Required precision is a property of the individual model, not its size,
+and is not predicted by the rotary base. The rotator is $19.2\%$ smaller and $42.7\%$ lower in power than
 standard CORDIC, and $19.1\%$ smaller with $38\%$ less energy than a
 $\sin/\cos$ LUT. All RTL and scripts are released at~\cite{github}.
 
