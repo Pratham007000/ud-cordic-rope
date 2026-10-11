@@ -1,0 +1,38 @@
+# ---- Genus / synthesis build artifacts -------------------------------------
+# Design databases are proprietary-format binaries that embed characterised
+# standard-cell library data. They are not redistributable and are useless
+# without a Genus licence. The human-readable reports under RUN/ are kept,
+# since those are what the paper's numbers are read from.
+*.db
+*.db.*
+RUN/**/fv/
+RUN/**/OUTPUT/outputs_*/
+*.gz
+*.tgz
+
+# Genus scratch
+*.cmd
+*.tstamp
+*.mode
+*.min_layer
+genus.cmd*
+genus.log*
+fv/
+
+# ---- Python ----------------------------------------------------------------
+__pycache__/
+*.pyc
+
+# ---- LaTeX -----------------------------------------------------------------
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.toc
+
+# ---- OS --------------------------------------------------------------------
+.DS_Store
