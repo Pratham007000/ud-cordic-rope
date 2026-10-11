@@ -35,23 +35,20 @@
 \title{A Uniformly Distributed CORDIC RoPE\\Accelerator for Large Language Models}
 
 %% ISCAS 2027 is NOT double-blind -- author information is required.
-\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization} \\
-\textit{name of organization}\\
-City, Country \\
-email or ORCID}
+\author{\IEEEauthorblockN{Siddhant Deore}
+\IEEEauthorblockA{\textit{International Institute of Information Technology Bangalore}\\
+Bangalore, India \\
+Siddhant.Deore@iiitb.ac.in}
 \and
-\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization} \\
-\textit{name of organization}\\
-City, Country \\
-email or ORCID}
+\IEEEauthorblockN{Pratham Shetty}
+\IEEEauthorblockA{\textit{International Institute of Information Technology Bangalore}\\
+Bangalore, India \\
+Pratham.Shetty@iiitb.ac.in}
 \and
-\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization} \\
-\textit{name of organization}\\
-City, Country \\
-email or ORCID}
+\IEEEauthorblockN{Madhav Rao}
+\IEEEauthorblockA{\textit{International Institute of Information Technology Bangalore}\\
+Bangalore, India \\
+mr@iiitb.ac.in}
 }
 
 \maketitle
@@ -127,11 +124,12 @@ decisive. Quantised attention accelerators such as ITA~\cite{c14} quantise the
 whole block including softmax; we approximate only the rotation, so the reported
 degradation is attributable to the rotation hardware alone. CORDIC itself is
 long-established, applied to activation
-functions~\cite{c16,c18,c21,c22}, softmax~\cite{c17}, arcsine and
-arccosine~\cite{c19,c20}, $n$-th roots~\cite{c10}, FFT datapaths~\cite{c24} and
-trigonometric evaluation~\cite{c8,c26}, with a long line of cost reductions:
-angle recoding~\cite{c1}, higher radix~\cite{c12}, scaling-free
-formulations~\cite{c25}, fixed-point pre-processing~\cite{c13}. Our
+functions~\cite{c16,c18,c19,c22,work1,work2}, softmax~\cite{c8,c17},
+arcsine and arccosine~\cite{c5,c20,c21}, $n$-th roots~\cite{c15}, FFT
+datapaths~\cite{c11} and trigonometric evaluation~\cite{c2,c3,c4}, with a long
+line of cost reductions: angle recoding~\cite{c1}, higher radix~\cite{c10},
+scaling-free formulations~\cite{c12}, fixed-point
+pre-processing~\cite{work3,c13}. Our
 contribution is not that machinery but what applying it to RoPE requires.
 
 %% ===================================================================
