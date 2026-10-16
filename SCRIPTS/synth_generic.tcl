@@ -38,11 +38,18 @@ set_db init_lib_search_path [list \
   ${libBase}/gsclib045_hvt/timing \
   ${libBase}/gsclib045_lvt/timing ]
 
+# Corner is selectable so the same flow can be re-run at a nominal or slow
+# corner without editing this file. Default is unchanged, so every result
+# produced before this change is reproduced exactly.
+set corner "fast_vdd1v2"
+if {[info exists env(SYN_CORNER)]} { set corner $env(SYN_CORNER) }
+puts "SYN_CORNER = $corner"
+
 read_libs [list \
-  fast_vdd1v2_basicCells.lib \
-  fast_vdd1v2_multibitsDFF.lib \
-  fast_vdd1v2_basicCells_hvt.lib \
-  fast_vdd1v2_basicCells_lvt.lib ]
+  ${corner}_basicCells.lib \
+  ${corner}_multibitsDFF.lib \
+  ${corner}_basicCells_hvt.lib \
+  ${corner}_basicCells_lvt.lib ]
 
 read_physical -lefs [list \
   ${libBase}/gsclib045/lef/gsclib045_tech.lef \

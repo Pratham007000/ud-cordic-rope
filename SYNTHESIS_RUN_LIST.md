@@ -110,3 +110,64 @@ outstanding `<<TBD>>` in the performance table.
 | T2.11 | Block-granularity accuracy sweep in the Python model, to pair with runs 16–17. |
 | T5.1–5.5 | Push new RTL, scripts, results CSV; write a real README; scrub git history before pointing a paper at the repo. |
 | — | Resolve `\todocite{poly}` and the prior-work rows in `tab:baselines` (numbers must come from the cited papers, normalised to 45 nm with the method stated). |
+
+---
+
+## Added 2026-10-16 — deadline moved to 22 Oct
+
+### Runs 18–23: W=13, the recommended operating point
+
+`tab:perf` currently shows W=12 and W=14 and concedes that the recommended
+W=13 "lies between the two word lengths shown". A reviewer can reasonably ask
+why the paper's own recommendation is the one point it does not measure.
+Six runs close that.
+
+```
+./SCRIPTS/run_all_synth.sh 18 19 20 21 22 23
+python3 SCRIPTS/collect_results.py build
+```
+
+| # | design | params | fills |
+|---|---|---|---|
+| 18 | rope_gain_comp | W=13 MODE=1 | H1 block for the merged row |
+| 19 | rope_mult_pair | W=13 | multiplier row |
+| 20 | rope_lut_pair | W=13 ADDR_W=7 | sin/cos LUT row |
+| 21 | rope_cordic_pair | W=13 STAGES=10 | standard CORDIC row |
+| 22 | rope_binary_ud_pair | W=13 STAGES=10 | **Binary UD row** |
+| 23 | rope_csd_pair | WIDTH=13 STAGES=5 | merged datapath |
+
+Merged UD row = run 23 area + run 18 area, as at the other two widths.
+
+**`rope_csd_pair` parameterises on `WIDTH`, not `W`.** Every other design in
+this file uses `W`. Passing `W=13` to it leaves WIDTH at its default of 9 and
+the run completes, silently, at the wrong width.
+
+### Runs 24–25: merged UD at W=12 and W=14 under this driver
+
+The merged datapath areas in `tab:perf` (2942 at W=12, 3467 at W=14) come from
+the earlier `RUN/csd_ud` campaign, not from `run_all_synth.sh`. Same library
+and corner, so the numbers stand, but the paper says every design ran "the
+same flow" and these two did not run *this* script. Cheap to remove the
+discrepancy:
+
+```
+./SCRIPTS/run_all_synth.sh 24 25
+```
+
+Expect ~2942 and ~3467 µm². A material difference means the two campaigns
+were not as identical as assumed, which matters more than the rerun cost.
+
+### Optional: a second corner
+
+`synth_generic.tcl` now reads `SYN_CORNER` (default `fast_vdd1v2`, so existing
+results reproduce exactly). The fast corner at 1.32 V / 0 °C is the most
+attackable choice in the evaluation. Repeating the five W=13 designs at the
+nominal or slow corner would answer that directly:
+
+```
+ls $SYN_LIBBASE/gsclib045/timing/*.lib          # see which corners exist
+SYN_CORNER=slow_vdd1v2 ./SCRIPTS/run_all_synth.sh 18 19 20 21 22 23
+```
+
+Build directories are named by run id, so run these into a separate tree or
+rename `build/` first, or the fast-corner results are overwritten.

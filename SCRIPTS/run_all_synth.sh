@@ -101,6 +101,33 @@ run 14 binud_W12_N10 rope_binary_ud_pair \
 run 15 binud_W14_N10 rope_binary_ud_pair \
        "rope_binary_ud_pair.v binary_ud_cordic_core.v" "$SEQ" "W=14 STAGES=10"
 
+# ---- P5: W=13, the recommended operating point -----------------------------
+# tab:perf showed W=12 and W=14 and said the recommendation "lies between the
+# two word lengths shown". These five runs put it in the table directly.
+# Note: rope_csd_pair parameterises on WIDTH, not W.
+run 18 gaincomp_H1_W13 rope_gain_comp "rope_gain_comp.v" "$COMB" "W=13 MODE=1"
+run 19 mult_W13        rope_mult_pair "rope_mult_pair.v"  "$SEQ"  "W=13"
+run 20 lut_W13         rope_lut_pair  "rope_lut_pair.v"   "$SEQ"  "W=13 ADDR_W=7"
+run 21 std_W13_N10 rope_cordic_pair \
+       "rope_cordic_pair.v cordic_standard_core.v cordic_standard_stage.v" \
+       "$SEQ" "W=13 STAGES=10"
+run 22 binud_W13_N10 rope_binary_ud_pair \
+       "rope_binary_ud_pair.v binary_ud_cordic_core.v" "$SEQ" "W=13 STAGES=10"
+
+# ---- P6: merged UD under THIS driver ---------------------------------------
+# The merged datapath areas in tab:perf came from the earlier RUN/csd_ud
+# campaign, not from this script. Same library and corner, but re-running them
+# here puts every row of the table on one flow, which is what the paper claims.
+run 23 merged_W13_N5 rope_csd_pair \
+       "rope_csd_pair.v csd_ud_cordic_core.v csd_ud_stage.v csd_control.v" \
+       "$SEQ" "WIDTH=13 STAGES=5"
+run 24 merged_W12_N5 rope_csd_pair \
+       "rope_csd_pair.v csd_ud_cordic_core.v csd_ud_stage.v csd_control.v" \
+       "$SEQ" "WIDTH=12 STAGES=5"
+run 25 merged_W14_N5 rope_csd_pair \
+       "rope_csd_pair.v csd_ud_cordic_core.v csd_ud_stage.v csd_control.v" \
+       "$SEQ" "WIDTH=14 STAGES=5"
+
 # ---- P4: block-granularity cost (pairs with VERIFY/block_granularity.py) ---
 run 16 bfp_norm_W14_D8  rope_bfp_norm "rope_bfp_norm.v" "$COMB" "W=14 D=8  EW=6"
 run 17 bfp_norm_W14_D16 rope_bfp_norm "rope_bfp_norm.v" "$COMB" "W=14 D=16 EW=6"
